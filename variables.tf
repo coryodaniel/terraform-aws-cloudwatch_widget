@@ -3,6 +3,9 @@ data "aws_region" "current" {
   current = true
 }
 
+variable "actions_enabled" {
+  default = true
+}
 variable "name_prefix" {}
 variable "namespace" {}
 variable "metric_name" {}

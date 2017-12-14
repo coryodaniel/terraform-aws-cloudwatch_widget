@@ -1,5 +1,6 @@
 resource "aws_cloudwatch_metric_alarm" "this" {
   count = "${length(var.resources)}"
+  actions_enabled     = "${var.actions_enabled}"
   alarm_name          = "${var.name_prefix}-${basename(var.namespace)}-${var.metric_name}-${element(var.resources, count.index)}"
   alarm_description   = "${var.description}"
   comparison_operator = "${var.comparison_operator}"
