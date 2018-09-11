@@ -1,40 +1,47 @@
-data "aws_caller_identity" "current" {}
-data "aws_region" "current" {
-  current = true
+# https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/CloudWatch-Dashboard-Body-Structure.html#CloudWatch-Dashboard-Properties-Metric-Widget-Object
+
+variable "dimensions" {
+  description = "A comma separated list of DimensionNames and DimensionsValues. Due to a limitation in Terraform, nested lists can't be passed through modules. :("
+  type = "list"
+  default = []
 }
 
-variable "actions_enabled" {
-  default = true
-}
-variable "name_prefix" {}
-variable "namespace" {}
 variable "metric_name" {}
-variable "description" {}
-variable "comparison_operator" {}
-variable "evaluation_periods" {}
-variable "period" {}
-variable "statistic" {}
-variable "threshold" {}
 
-variable "resources" {
-  type = "list"
+variable "namespace" {}
+
+// Widget Properties
+
+variable "height" {
+  default = 6
 }
 
-variable  "dimension" {
-  default = "DBInstanceIdentifier"
+variable "width" {
+  default = 6
 }
 
-variable  "insufficient_data_actions" {
-  type = "list"
-  default = []
+// Metric Object Properties
+
+variable "region" {
+  default = "us-east-1"
 }
 
-variable  "ok_actions" {
-  type = "list"
-  default = []
+variable "period" {
+  default = 300
 }
 
-variable  "alarm_actions" {
-  type = "list"
-  default = []
+variable "stacked" {
+  default = false
+}
+
+variable "stat" {
+  default = "Average"
+}
+
+variable "title" {
+  default = false
+}
+
+variable "view" {
+  default = "timeSeries"
 }

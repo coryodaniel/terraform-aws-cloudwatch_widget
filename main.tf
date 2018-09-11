@@ -1,60 +1,50 @@
-resource "aws_cloudwatch_metric_alarm" "this" {
-  count = "${length(var.resources)}"
-  actions_enabled     = "${var.actions_enabled}"
-  alarm_name          = "${var.name_prefix}-${basename(var.namespace)}-${var.metric_name}-${element(var.resources, count.index)}"
-  alarm_description   = "${var.description}"
-  comparison_operator = "${var.comparison_operator}"
-  evaluation_periods  = "${var.evaluation_periods}"
-  metric_name         = "${var.metric_name}"
-  namespace           = "${var.namespace}"
-  period              = "${var.period}"
-  statistic           = "${var.statistic}"
-  threshold           = "${var.threshold}"
-  alarm_actions       = ["${var.alarm_actions}"]
-  dimensions          = "${map("${var.dimension}", "${element(var.resources, count.index)}")}"
+locals {
+  namespaced_metric = "${list("${var.namespace}", "${var.metric_name}")}"
 }
 
+
 data "template_file" "metric" {
-  count = "${length(var.resources)}"
-  template = <<JSON
-[
-   "${var.namespace}",
-   "${var.metric_name}",
-   "${var.dimension}",
-   "$${id}"
-]
-JSON
+  count = "${length(var.dimensions)}"
+  template = "$${dims}"
 
   vars {
-    id = "${element(var.resources,count.index)}"
+    # This sucks, but its a limitation of Terraform until v 0.12
+    dims = "${jsonencode( concat( local.namespaced_metric, split(",", replace(var.dimensions[count.index], ", ", ",")) ) )}"
   }
 }
 
-data "template_file" "metric-wrapper" {
-  template = <<JSON
-[
-  $${list_of_metrics}
-]
-JSON
+data "template_file" "metrics" {
+  template = "[$${list_of_metrics}]"
+
   vars {
-    list_of_metrics = "${join(",\n", data.template_file.metric.*.rendered)}"
+    list_of_metrics = "${join(", ", data.template_file.metric.*.rendered)}"
   }
 }
 
 data "template_file" "properties" {
-  template = <<JSON
-{
-   "metrics":${data.template_file.metric-wrapper.rendered},
-   "period":${var.period},
-   "stat":"${var.statistic}",
-   "region":"${data.aws_region.current.name}",
-   "title":"${var.description}"
-}
-JSON
+  template = "${file("${path.module}/files/properties.json")}"
+  vars {
+    metrics = "${data.template_file.metrics.rendered}"
+    period = "${var.period}"
+    region = "${var.region}"
+    stacked = "${var.stacked ? "true" : "false"}"
+    stat = "${var.stat}",
+    title = "${var.title == 0 ? "${var.namespace} ${var.metric_name}" : var.title}",
+    view = "${var.view}"
+  }
 }
 
-# resource "null_resource" "export_rendered_template0" {
-#   provisioner "local-exec" {
-#     command = "cat > /tmp/terraform-output.json <<EOL\n${data.template_file.cpu_utilization-wrapper.rendered}\nEOL"
-#   }
-# }
+data "template_file" "widget" {
+  template = "${file("${path.module}/files/widget.json")}"
+  vars {
+    width = "${var.width}"
+    height = "${var.height}"
+    properties = "${data.template_file.properties.rendered}"
+  }
+}
+
+// resource "null_resource" "export_rendered_template" {
+//   provisioner "local-exec" {
+//     command = "cat > /tmp/terraform-output.json <<EOL\n${data.template_file.widget.rendered}\nEOL"
+//   }
+// }

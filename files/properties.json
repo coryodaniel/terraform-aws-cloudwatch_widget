@@ -1,0 +1,9 @@
+{
+   "metrics":${metrics},
+   "period":${period},
+   "region":"${region}",
+   "stacked":${stacked},
+   "stat":"${stat}",
+   "title":"${title}",
+   "view":"${view}"
+}
